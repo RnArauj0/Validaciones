@@ -30,7 +30,7 @@ def preparar_anulados():
     """
     Prepara el archivo de Anulados:
       - Lee desde INPUT_ANULADOS (Anulados.xlsx)
-      - Filtra las pólizas con Situacion = "ANULADA"
+      - Elimina duplicados (cada póliza solo una vez, mantiene el último registro)
       - Guarda el resultado en OUTPUT_PACIFICO_ANULADO
     """
     print("\n[INICIO] Preparación de Anulados")
@@ -56,15 +56,18 @@ def preparar_anulados():
     df.columns = df.columns.map(str).str.strip()
 
     # 4. Verificar que existan las columnas necesarias
-    if "Situacion" not in df.columns:
-        print("[ERROR] El archivo no contiene la columna 'Situacion'")
+    if "Nro de Poliza/Contrato" not in df.columns:
+        print("[ERROR] El archivo no contiene la columna 'Nro de Poliza/Contrato'")
         return
 
-    # 5. Filtrar solo las pólizas anuladas
-    df["Situacion"] = df["Situacion"].astype(str).str.strip().str.upper()
-    df_anuladas = df[df["Situacion"] == "ANULADA"].copy()
+    # 5. Eliminar duplicados - cada póliza solo una vez (mantener el último registro)
+    filas_antes = len(df)
+    df_limpio = df.drop_duplicates(subset=["Nro de Poliza/Contrato"], keep="last")
+    filas_despues = len(df_limpio)
+    duplicados_eliminados = filas_antes - filas_despues
 
-    print(f"[INFO] Pólizas ANULADAS encontradas: {len(df_anuladas)}")
+    print(f"[INFO] Pólizas únicas: {filas_despues}")
+    print(f"[INFO] Duplicados eliminados: {duplicados_eliminados}")
 
     # 6. Guardar en OUTPUT_PACIFICO_ANULADO
     OUTPUT_PACIFICO_ANULADO.mkdir(parents=True, exist_ok=True)
@@ -74,7 +77,7 @@ def preparar_anulados():
         with warnings.catch_warnings():
             warnings.simplefilter("ignore")
             with pd.ExcelWriter(output_path, engine="openpyxl") as writer:
-                df_anuladas.to_excel(writer, index=False, sheet_name="Anulados")
+                df_limpio.to_excel(writer, index=False, sheet_name="Anulados")
         print(f"[OK] Archivo preparado guardado: {output_path}")
     except Exception as e:
         print(f"[ERROR] No se pudo guardar el archivo preparado: {e}")

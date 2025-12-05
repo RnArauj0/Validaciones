@@ -392,14 +392,11 @@ def integracion_pacifico():
                     base.loc[primer_si, "DentroRango"] = "Sí"
 
     # ---------------------------------------------------------------
-    # Paso 9: Reordenar columnas, eliminar Situacion / Cedidos y exportar
+    # Paso 9: Preparar columnas finales y exportar
     # ---------------------------------------------------------------
-    # Eliminamos las columnas que ya no deben aparecer en el Excel final
-    for col_drop in ["Situacion", "Cedidos"]:
-        if col_drop in base.columns:
-            base = base.drop(columns=[col_drop])
+    # Nota: Mantenemos todas las columnas incluyendo Situacion
 
-    # Columnas finales (sin Situacion ni Cedidos)
+    # Columnas finales
     cols_final = [
         "Contratante",
         "Nro de Documento",
@@ -411,6 +408,7 @@ def integracion_pacifico():
         "Observaciones",
         "Responsable",
         "Fin de Vigencia",
+        "Situacion",
         "OBS",
         "DentroRango",
         "Polizas Anulada",
