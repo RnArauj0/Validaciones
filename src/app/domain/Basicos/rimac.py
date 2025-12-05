@@ -59,7 +59,11 @@ def preparar_rimac():
 
         # Convertir 'VENCIMIENTO' a datetime para poder ordenar correctamente
         if "VENCIMIENTO" in df_base.columns:
+            # Solo aplicar el ordenamiento si existe la columna y al menos una fecha
             df_base["VENCIMIENTO"] = pd.to_datetime(df_base["VENCIMIENTO"], errors="coerce")
+            if df_base["VENCIMIENTO"].notna().any():
+                # Ordenar por fecha de más antiguo a más reciente ANTES de aplicar las siguientes condiciones
+                df_base = df_base.sort_values(by="VENCIMIENTO", ascending=True, na_position="last")
 
         # Normalizar nro de póliza (espacios)
         if "NRO. POLIZA" in df_base.columns:
@@ -69,32 +73,29 @@ def preparar_rimac():
         campos_duplicados = ["RESPONSABLE DE PAGO", "NRO. POLIZA", "CATEGORÍA"]
         campos_disponibles = [c for c in campos_duplicados if c in df_base.columns]
 
-        if len(campos_disponibles) == 3:
+        # Aplicar eliminación de duplicados únicamente cuando LOS TRES campos estén presentes
+        if set(campos_disponibles) == set(campos_duplicados):
             before = len(df_base)
-            # Ordenar por los 3 campos y vencimiento ascendente para conservar el más antiguo
-            sort_cols = campos_disponibles.copy()
-            if "VENCIMIENTO" in df_base.columns:
-                sort_cols.append("VENCIMIENTO")
-                df_base = df_base.sort_values(by=sort_cols, ascending=[True, True, True, True], na_position="last")
-            else:
-                df_base = df_base.sort_values(by=campos_disponibles, ascending=[True, True, True])
 
-            # Eliminar duplicados SOLO cuando los 3 campos coincidan
-            df_base = df_base.drop_duplicates(subset=campos_disponibles, keep="first")
-            removed = before - len(df_base)
+            # No ordenar por VENCIMIENTO: conservar el orden original del archivo y mantener la primera aparición
+            mask_duplicados = df_base.duplicated(subset=campos_duplicados, keep="first")
+            removed = int(mask_duplicados.sum())
+
+            # Conservar la primera ocurrencia (orden original) y eliminar el resto
+            df_base = df_base.loc[~mask_duplicados].copy()
+
             if removed > 0:
-                print(
-                    f"[INFO] Eliminados {removed} registros duplicados con 'RESPONSABLE DE PAGO', 'NRO. POLIZA' y 'CATEGORÍA' idénticos (se conserva el más antiguo).")
+                print(f"[INFO] Eliminados {removed} registros duplicados con 'RESPONSABLE DE PAGO', 'NRO. POLIZA' y 'CATEGORÍA' idénticos (se conserva la primera aparición).")
             else:
                 print(f"[INFO] No se encontraron duplicados con los 3 campos idénticos.")
         else:
-            print(
-                f"[ADVERTENCIA] No se encontraron los 3 campos necesarios para eliminar duplicados. Campos disponibles: {campos_disponibles}")
+            # No tenemos los 3 campos; no eliminamos duplicados.
+            print(f"[ADVERTENCIA] No se encontraron los 3 campos necesarios para eliminar duplicados. Campos disponibles: {campos_disponibles}")
 
-        # Ordenar por vencimiento para salida si existe
+        # Formatear fecha para escritura/export (si existen valores)
         if "VENCIMIENTO" in df_base.columns:
-            df_base = df_base.sort_values(by="VENCIMIENTO", ascending=True, na_position="last")
-            # Formatear fecha para escritura/export
+            # Asegurar que es datetime y luego formatear; no reordenamos aquí para evitar cambiar la prioridad original
+            df_base["VENCIMIENTO"] = pd.to_datetime(df_base["VENCIMIENTO"], errors="coerce")
             df_base["VENCIMIENTO"] = df_base["VENCIMIENTO"].dt.strftime("%Y-%m-%d")
 
         print(f"[OK] Datos limpiados y ordenados. Total final: {len(df_base)} filas.")
@@ -135,27 +136,3 @@ def preparar_rimac():
 # Punto de ejecución directa
 if __name__ == "__main__":
     preparar_rimac()
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
