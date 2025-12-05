@@ -212,6 +212,11 @@ MAPEO = {
         },
         {
             "Linea": "Vida Individual",
+            "Producto": "University Life 12",
+            "Responsable": "Briyan"
+        },
+        {
+            "Linea": "Vida Individual",
             "Producto": "Premium Life Max",
             "Responsable": "Briyan"
         },
@@ -373,6 +378,11 @@ MAPEO = {
         {
             "Linea": "Riesgos Generales",
             "Producto":"SEGURO PATRIMONIAL",
+            "Responsable": "Thalia"
+        },
+        {
+            "Linea": "Riesgos Generales",
+            "Producto":"RESPONSABILIDAD CIVIL",
             "Responsable": "Thalia"
         }
     ],

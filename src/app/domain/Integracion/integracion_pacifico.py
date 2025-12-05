@@ -27,6 +27,7 @@ from src.app.repository.mapping_repository import MAPEO
 from src.app.domain.Basicos.sics import preparar_sics
 from src.app.domain.Basicos.sharepoint import preparar_sharepoint
 from src.app.domain.Basicos.pacifico import preparar_pacifico
+from src.app.domain.Basicos.anulados import preparar_anulados
 
 
 # ===================================================================
@@ -133,7 +134,7 @@ def integracion_pacifico():
         print(f"[ERROR] Fallo en la preparación de SharePoint: {e}")
         return
 
-    print("\n[ETAPA 3/4] Preparación de datos Pacífico")
+    print("\n[ETAPA 3/5] Preparación de datos Pacífico")
     print("-" * 70)
     try:
         preparar_pacifico()
@@ -141,10 +142,18 @@ def integracion_pacifico():
         print(f"[ERROR] Fallo en la preparación de Pacífico: {e}")
         return
 
+    print("\n[ETAPA 4/5] Preparación de Anulados")
+    print("-" * 70)
+    try:
+        preparar_anulados()
+    except Exception as e:
+        print(f"[ERROR] Fallo en la preparación de Anulados: {e}")
+        return
+
     # ---------------------------------------------------------------
     # Paso 1: Localizar archivos preparados
     # ---------------------------------------------------------------
-    print("\n[ETAPA 4/4] Integración y Match de datos Pacífico")
+    print("\n[ETAPA 5/5] Integración y Match de datos Pacífico")
     print("-" * 70)
 
     try:
