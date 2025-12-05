@@ -54,10 +54,8 @@ def preparar_rimac():
     # 4️⃣ Limpieza y normalización de datos
     # ---------------------------------------------------------
     try:
-        # Mantener solo columnas clave (si existen)
-        columnas_principales = [c for c in ["RESPONSABLE DE PAGO", "NRO. POLIZA", "CATEGORÍA", "VENCIMIENTO"] if
-                                c in df.columns]
-        df_base = df[columnas_principales].copy()
+        # Trabajar con TODAS las columnas del DataFrame original
+        df_base = df.copy()
 
         # Convertir 'VENCIMIENTO' a datetime para poder ordenar correctamente
         if "VENCIMIENTO" in df_base.columns:
@@ -67,22 +65,31 @@ def preparar_rimac():
         if "NRO. POLIZA" in df_base.columns:
             df_base["NRO. POLIZA"] = df_base["NRO. POLIZA"].astype(str).str.strip()
 
-        # Eliminar duplicados por número de póliza: conservar la más antigua
-        if "NRO. POLIZA" in df_base.columns:
+        # Eliminar duplicados SOLO si los 3 campos son idénticos: RESPONSABLE DE PAGO, NRO. POLIZA y CATEGORÍA
+        campos_duplicados = ["RESPONSABLE DE PAGO", "NRO. POLIZA", "CATEGORÍA"]
+        campos_disponibles = [c for c in campos_duplicados if c in df_base.columns]
+
+        if len(campos_disponibles) == 3:
             before = len(df_base)
-            # Ordenar por póliza y vencimiento ascendente (NaT al final) para que 'first' sea la más antigua
-            sort_cols = ["NRO. POLIZA"]
+            # Ordenar por los 3 campos y vencimiento ascendente para conservar el más antiguo
+            sort_cols = campos_disponibles.copy()
             if "VENCIMIENTO" in df_base.columns:
                 sort_cols.append("VENCIMIENTO")
-                df_base = df_base.sort_values(by=sort_cols, ascending=[True, True], na_position="last")
+                df_base = df_base.sort_values(by=sort_cols, ascending=[True, True, True, True], na_position="last")
             else:
-                df_base = df_base.sort_values(by="NRO. POLIZA", ascending=True)
+                df_base = df_base.sort_values(by=campos_disponibles, ascending=[True, True, True])
 
-            df_base = df_base.drop_duplicates(subset=["NRO. POLIZA"], keep="first")
+            # Eliminar duplicados SOLO cuando los 3 campos coincidan
+            df_base = df_base.drop_duplicates(subset=campos_disponibles, keep="first")
             removed = before - len(df_base)
             if removed > 0:
                 print(
-                    f"[INFO] Eliminados {removed} registros duplicados por 'NRO. POLIZA' (se conserva la más antigua).")
+                    f"[INFO] Eliminados {removed} registros duplicados con 'RESPONSABLE DE PAGO', 'NRO. POLIZA' y 'CATEGORÍA' idénticos (se conserva el más antiguo).")
+            else:
+                print(f"[INFO] No se encontraron duplicados con los 3 campos idénticos.")
+        else:
+            print(
+                f"[ADVERTENCIA] No se encontraron los 3 campos necesarios para eliminar duplicados. Campos disponibles: {campos_disponibles}")
 
         # Ordenar por vencimiento para salida si existe
         if "VENCIMIENTO" in df_base.columns:
@@ -95,7 +102,6 @@ def preparar_rimac():
     except Exception as e:
         print(f"[ERROR] Error durante la limpieza o normalización: {e}")
         return
-
     # ---------------------------------------------------------
     # 5️⃣ Guardar los cambios en el mismo archivo
     # ---------------------------------------------------------
